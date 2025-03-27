@@ -1,0 +1,379 @@
+Criar um modelo baseado nisso para entregar no trabalho:
+
+Vamos usar o Apache Spark e o Python.
+Vamos criar como módulo e depois integrar a API através de rotas
+Como teste vamos usar um arquivo de 100 mb.
+
+Algumas informações relevantes:
+
+a)Apache spark 
+b)O conceito é na verdade o processamento de dados do banco de bases .parquet  
+c)É compatível com python 
+d)Temos uma base com 1.3 TB para subir para o servidor, está comprimido por .snappy e são arquivos .parquet. Então ao invés de  
+atualizar nossa base no mongodb, vamos usar os próprios arquivos .parquet como base de dados gerenciando com o apache spark 
+e)Ele aceita tanto python como também aceita SQL pra gerar as consultas
+
+Vamos estruturar isso da seguinte forma:
+1)Configuração do Apache Spark no ambiente.
+2)Criação do módulo em Python para leitura e processamento dos arquivos .parquet.
+3)Definição de funções para consultas em SQL e Python.
+4)Integração com a API via rotas.
+
+Instalação e Configuração do Apache Spark no Ubuntu
+
+Passo 1: Atualizar pacotes
+Antes de instalar qualquer coisa, atualize a lista de pacotes e os pacotes já instalados para garantir que o sistema esteja 
+atualizado:
+sudo apt update && sudo apt upgrade -y
+
+Passo 2: Instalar dependências
+O Apache Spark precisa do Java para funcionar. Vamos instalar a versão mais recente do OpenJDK 11:
+
+a) Instalar OpenJDK 11
+sudo apt install -y openjdk-11-jdk
+
+b) Verificar se a instalação foi bem-sucedida
+java -version
+
+c)Se a instalação foi concluída corretamente, o comando acima deve retornar algo como:
+openjdk version "11.0.x" [...]
+
+Passo 3: Baixar e instalar o Apache Spark
+Agora vamos baixar e instalar o Apache Spark.
+
+a) Baixar a versão mais recente do Spark (compatível com Hadoop 3.3)
+wget https://dlcdn.apache.org/spark/spark-3.5.5/spark-3.5.5-bin-hadoop3.tgz
+
+b) Descompactar o arquivo baixado
+tar -xvzf spark-3.5.5-bin-hadoop3.tgz
+
+c) Mover o diretório para /opt/
+sudo mv spark-3.5.5-bin-hadoop3 /opt/spark
+
+Passo 4: Configurar variáveis de ambiente
+Precisamos definir algumas variáveis de ambiente para o Spark funcionar corretamente.
+
+a) Abrir o arquivo de configuração do Bash
+nano ~/.bashrc
+
+b) Adicionar as seguintes linhas no final do arquivo
+export SPARK_HOME=/opt/spark
+export PATH=$SPARK_HOME/bin:$PATH
+export PYSPARK_PYTHON=python3
+export PYSPARK_DRIVER_PYTHON=python3
+
+c) Salvar e fechar o arquivo
+Pressione CTRL+X para sair do editor.
+Pressione Y para salvar as alterações.
+Pressione Enter para confirmar.
+
+d) Aplicar as mudanças
+source ~/.bashrc
+
+Passo 5: Testar a instalação
+Agora vamos testar se o Apache Spark foi instalado corretamente.
+
+Executar o Spark Shell
+spark-shell
+Se tudo estiver funcionando corretamente, você verá a interface interativa do Spark carregando sem erros.
+
+Passo 6: Criar um ambiente virtual e instalar PySpark, JupyterLab e Poetry
+Vamos instalar o PySpark para usar o Spark com Python, o Jupyter Notebook para facilitar a execução de código e o Poetry.
+Os pacotes PySpark, Jupyterlab e Poetry não são incluídos automaticamente na instalação do Apache Spark. É preciso instalá-los 
+separadamente.
+
+a) Criar um ambiente virtual para o Spark
+mkdir -p ~/spark-project
+cd ~/spark-project
+
+I)mkdir -p ~/spark-project
+
+O que faz?
+
+Cria o diretório spark-project dentro do diretório pessoal do usuário (~ equivale a /home/papaismurf/).
+O -p garante que se o diretório já existir, não dará erro, e também cria diretórios intermediários, se necessário.
+Como o comando é executado sem sudo, o diretório será criado com permissões do usuário atual.
+Útil quando você quer criar um diretório sem precisar de permissões de root e garantir que não ocorra erro caso ele já exista.
+Exemplo:
+Se ~/spark-project ainda não existir, ele será criado. Caso já exista, o comando simplesmente não faz nada.
+
+II)sudo mkdir spark-project
+
+O que faz?
+
+Cria o diretório spark-project no diretório atual, pois não há caminho absoluto.
+Como sudo é usado, o diretório será criado com permissões de root, o que pode causar problemas se o usuário atual tentar modificar 
+arquivos dentro dele sem permissões adequadas.
+Se o diretório já existir, o comando vai falhar com um erro:
+mkdir: cannot create directory 'spark-project': File exists
+Útil quando você precisa criar um diretório em um local onde seu usuário não tem permissão (por exemplo, /opt/spark).
+Exemplo:
+Se o terminal estiver no diretório /home/papaismurf/, o comando criará /home/papaismurf/spark-project com permissões de root.
+
+Qual usar?
+
+Se você quer criar o diretório no seu home sem erros:
+mkdir -p ~/spark-project
+
+Se você precisa criar em um local protegido (ex: /opt/spark ou /usr/local/spark):
+sudo mkdir /opt/spark
+
+sudo apt install python3.10-venv
+sudo python3 -m venv spark-env
+source spark-env/bin/activate  # Ativar o ambiente virtual
+sudo chown -R $(whoami):$(whoami) ~/spark-project/spark-env
+sudo chown -R $USER:$USER /home/papaismurf/spark-project/spark-env/lib/python3.10/site-packages
+sudo chown -R $USER:$USER spark-env
+
+Esses três comandos alteram a propriedade (owner) dos arquivos e diretórios no Linux, mas de maneiras ligeiramente diferentes:
+
+IV)sudo chown -R $(whoami) ~/spark-project/spark-env
+
+O que faz?
+
+Altera recursivamente (-R) o dono (chown) de todos os arquivos e diretórios dentro de ~/spark-project/spark-env para o usuário que 
+está executando o comando.
+$(whoami) retorna o nome do usuário logado, então é equivalente a sudo chown -R papaismurf ~/spark-project/spark-env.
+Não altera o grupo, apenas o dono dos arquivos.
+Útil quando você quer garantir que todos os arquivos desse diretório pertençam ao seu usuário.
+
+V)sudo chown -R $USER:$USER /home/papaismurf/spark-project/spark-env/lib/python3.10/site-packages
+
+O que faz?
+
+Altera recursivamente (-R) tanto o dono quanto o grupo ($USER:$USER) de apenas o diretório site-packages.
+$USER é uma variável de ambiente que contém o nome do usuário logado (assim como whoami).
+Então, se $USER = papaismurf, o comando equivale a:
+sudo chown -R papaismurf:papaismurf /home/papaismurf/spark-project/spark-env/lib/python3.10/site-packages
+Útil para corrigir permissões dentro do diretório onde os pacotes Python são instalados no ambiente virtual.
+
+VI)sudo chown -R $USER:$USER spark-env
+
+O que faz?
+
+Sem caminho absoluto, esse comando assume que spark-env está no diretório atual.
+Altera recursivamente (-R) tanto o dono quanto o grupo ($USER:$USER) de todo o diretório spark-env.
+Útil para corrigir permissões de todo o ambiente virtual (não só site-packages, mas também os scripts e bibliotecas).
+
+Qual usar?
+
+Se o problema for o ambiente virtual inteiro:
+sudo chown -R $USER:$USER ~/spark-project/spark-env
+
+Se o erro for só dentro do site-packages:
+sudo chown -R $USER:$USER ~/spark-project/spark-env/lib/python3.10/site-packages
+
+b) Instalar o PySpark, Poetry e o Jupyter dentro do ambiente virtual
+
+Se quiser garantir que o JupyterLab funcione plenamente, basta instalar o Node.js:
+sudo apt install nodejs npm -y
+
+Depois, recarregue as configurações:
+source ~/.bashrc
+
+pip install --upgrade pip setuptools wheel
+pip install pyspark
+pip install pyspark jupyterlab poetry
+
+c) Verificar se as instalações foram bem-sucedidas
+
+Para testar se o PySpark está funcionando:
+python3 -c "import pyspark; print(pyspark.__version__)"
+Se exibir a versão do PySpark, a instalação está correta.
+
+Testar JupyterLab
+jupyter-lab
+Se abrir a interface no navegador, está funcionando.
+
+Testar Poetry
+poetry --version
+
+Agora o ambiente Spark está completo com PySpark, JupyterLab e Poetry.
+
+A principal diferença entre instalar o Apache Spark (via PySpark) dentro de um ambiente virtual e fora dele está no isolamento do 
+ambiente e na facilidade de gerenciamento de dependências.
+
+Instalar o Spark dentro de um ambiente virtual
+Criar e ativar um ambiente virtual antes da instalação garante que todas as dependências do PySpark, Jupyter e Poetry fiquem 
+isoladas dentro daquele ambiente específico.
+
+Vantagens:
+Evita conflitos com outras versões do PySpark ou bibliotecas do sistema.
+Facilita a replicação do ambiente em outros dispositivos ou servidores.
+Permite que diferentes projetos tenham versões diferentes do PySpark, Jupyter ou outras dependências.
+Facilita a remoção ou atualização do ambiente sem afetar outras aplicações no sistema.
+
+Desvantagens:
+Exige ativação manual (source spark-env/bin/activate) sempre que for usar o ambiente.
+Pode consumir mais espaço em disco, pois cada ambiente virtual armazena suas próprias dependências.
+
+Instalar o Spark fora de um ambiente virtual
+Se você instalar o PySpark, Jupyter e Poetry diretamente no sistema (sem ambiente virtual), eles ficam disponíveis globalmente para 
+todos os projetos e usuários.
+
+Vantagens:
+Evita a necessidade de ativar o ambiente virtual antes de usar o PySpark.
+Pode ser mais simples para quem quer apenas rodar scripts localmente sem se preocupar com isolamento.
+
+Desvantagens:
+Pode causar conflitos de versão com outras bibliotecas instaladas no sistema.
+Se precisar de versões diferentes do PySpark para diferentes projetos, pode ser um problema.
+Atualizações do sistema podem afetar a instalação global do PySpark, quebrando projetos existentes.
+
+Conclusão
+Se você pretende trabalhar com múltiplos projetos e quer evitar conflitos entre bibliotecas, o ambiente virtual é a melhor escolha.
+Se for apenas um uso simples e local, sem necessidade de múltiplas versões ou isolamento, a instalação global pode ser suficiente.
+
+Recomendação: Se você está desenvolvendo um módulo usando Apache Spark e quer integração com sua API, instalar dentro de um 
+ambiente virtual será a opção mais segura e organizada. 
+
+Passo 7: Rodar o Jupyter Notebook
+Agora podemos iniciar o Jupyter Notebook para trabalhar com PySpark:
+
+jupyter-lab
+Isso abrirá o Jupyter no navegador, permitindo rodar código Spark com Python.
+
+Passo 8: Criar um Hello World com PySpark
+Agora vamos criar um pequeno código para testar o PySpark.
+
+Abra o Jupyter Notebook e execute o seguinte código em cada célula:
+
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+from pyspark.sql import SparkSession
+
+spark = (
+    SparkSession
+    .builder
+    .master("local[*]")
+    .appName('test')
+    .getOrCreate()
+)
+
+data = [
+    ("James", "", "Smith", "36636", "M", 3000),
+    ("Michael", "Rose", "", "40288", "M", 4000),
+    ("Robert", "", "Williams", "42114", "M", 4000),
+    ("Maria", "Anne", "Jones", "39192", "F", 4000),
+    ("Jen", "Mary", "Brown", "", "F", -1)
+]
+
+schema = StructType([
+    StructField("firstname", StringType(), True),
+    StructField("middlename", StringType(), True),
+    StructField("lastname", StringType(), True),
+    StructField("id", StringType(), True),
+    StructField("gender", StringType(), True),
+    StructField("salary", IntegerType(), True)
+])
+
+df = spark.createDataFrame(data=data, schema=schema)
+
+df.printSchema()
+df.show(truncate=False)
+Se tudo estiver funcionando, o código acima imprimirá a estrutura do DataFrame e os dados.
+
+Passo 9: Trabalhar com DataFrame API e Spark SQL
+Agora vamos ver como o Spark lida com manipulação de dados e consultas SQL.
+
+a) Ler um arquivo CSV com Spark
+from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
+
+spark = (
+    SparkSession
+    .builder
+    .master("local[*]")
+    .appName('spark_dataframe_api')
+    .getOrCreate()
+)
+
+df = (
+    spark
+    .read
+    .option('delimiter', ';')
+    .option('header', 'true')
+    .option('inferSchema', 'true')
+    .option('encoding', 'ISO-8859-1')
+    .csv('./dados/precos-gasolina-etanol-10.csv')
+)
+
+df.printSchema()
+df.show()
+
+b) Processar os dados com Spark SQL
+df.createOrReplaceTempView('combustiveis')
+spark.sql("""
+    SELECT * FROM combustiveis WHERE `Valor de Compra` IS NOT NULL
+""").show()
+
+Passo 10: Criar um modelo para processar arquivos .parquet
+Agora, vamos configurar um modelo para processar os arquivos .parquet comprimidos com .snappy.
+
+a) Criar um DataFrame a partir de um arquivo .parquet
+df_parquet = spark.read.parquet("caminho/do/arquivo.parquet")
+df_parquet.printSchema()
+df_parquet.show()
+
+b) Realizar consultas SQL no .parquet
+df_parquet.createOrReplaceTempView('tabela_parquet')
+spark.sql("""
+    SELECT coluna1, coluna2 FROM tabela_parquet WHERE coluna3 > 100
+""").show()
+
+Conclusão:
+Agora o Apache Spark está instalado e pronto para processar arquivos .parquet no seu ambiente Ubuntu.
+
+Passo 11: Instalar o homebrew, mas criando um usuário comum no WSL2(Windows 10)para fazer a instalação.
+
+O homebrew é um gerenciador de pacotes que facilita a instalação, atualização e desisntalação de ferramentas e pacotes. 
+
+a)Criar um usuário comum
+Se você estiver usando o root no WSL2, é recomendado criar um usuário comum para evitar problemas de permissão. Para criar um 
+usuário chamado common_user, execute:
+sudo adduser common_user
+Defina uma senha quando solicitado e pressione Enter para os demais campos opcionais.
+
+b)Agora, adicione o novo usuário ao grupo sudo para que ele possa instalar pacotes quando necessário:
+sudo usermod -aG sudo common_user
+Troque para o novo usuário:
+su - common_user
+
+c)Instalar dependências
+Antes de instalar o Homebrew, instale as dependências necessárias:
+sudo apt update
+sudo apt install -y build-essential procps curl file git
+
+d)Instalar o Homebrew
+Execute o comando de instalação oficial:
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+Quando a instalação terminar, você verá instruções para adicionar o Homebrew ao PATH.
+
+e)Configurar o Homebrew no ambiente
+Adicione o Homebrew ao PATH do seu usuário:
+
+echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
+echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.profile
+source ~/.bashrc
+
+f)Confirme se o Homebrew foi instalado corretamente com:
+brew --version
+Se aparecer algo como Homebrew 4.x.x, a instalação foi concluída com sucesso! 
+
+Agora, sempre que quiser usar o Homebrew, faça login com o usuário common_user:
+su - common_user
+Se precisar de permissões administrativas para instalar algo, basta usar sudo.
+
+
+
+
+
+Testes com um arquivo de 100MB antes de aplicar à base completa.
+Tem um IDE para desenvolvimento igual ao VSCode na verdade ele importa todas as configurações do vscode, a diferença é que ele é 
+totalmente com IA, mesmo assim algumas vezes ele acaba atrapalhando. Uma coisa boa é que se ele identificar que falta algum pacote a 
+ser instalado no seu código, ele mesmo inicia o comando no terminal para a instalação dos pacotes que faltam, e também no console do 
+terminal quando aparece um erro você consegue enviar pra ele analisar na hora e ai ele já edita os arquivos que estão gerando erro 
+salva e ai você pode testar antes de aceitar as modificações que ele faz
+É legal pra criar funções básicas, fiz um teste ontem pedi pra ele criar um sisteminha e ele criou todos os arquivos e instalou 
+todas as dependências sozinhos. só não funcionou kkk precisou de ajustes
+
+
