@@ -2,7 +2,7 @@ Criar um modelo baseado nisso para entregar no trabalho:
 
 Vamos usar o Apache Spark e o Python.
 Vamos criar como módulo e depois integrar a API através de rotas
-Como teste vamos usar um arquivo de 100 mb.
+Como teste vamos usar um arquivo pequeno.
 
 Algumas informações relevantes:
 
@@ -63,9 +63,13 @@ export PYSPARK_PYTHON=python3
 export PYSPARK_DRIVER_PYTHON=python3
 
 c) Salvar e fechar o arquivo
-Pressione CTRL+X para sair do editor.
+Pressione CTRL+X para sair do editor 
 Pressione Y para salvar as alterações.
 Pressione Enter para confirmar.
+ou 
+Pressione CTRL+O para salvar
+Pressione Enter para confirmar.
+Pressione CTRL+X para sair do editor
 
 d) Aplicar as mudanças
 source ~/.bashrc
@@ -76,6 +80,7 @@ Agora vamos testar se o Apache Spark foi instalado corretamente.
 Executar o Spark Shell
 spark-shell
 Se tudo estiver funcionando corretamente, você verá a interface interativa do Spark carregando sem erros.
+Abra o link http://172.20.102.56:4040/jobs/ no navegador para acessar o Apache Spark
 
 Passo 6: Criar um ambiente virtual e instalar PySpark, JupyterLab e Poetry
 Vamos instalar o PySpark para usar o Spark com Python, o Jupyter Notebook para facilitar a execução de código e o Poetry.
@@ -120,6 +125,9 @@ sudo mkdir /opt/spark
 
 sudo apt install python3.10-venv
 sudo python3 -m venv spark-env
+
+Entre no diretóio onde o ambiente virtual foi criado e ative o ambiente:
+cd spark-project
 source spark-env/bin/activate  # Ativar o ambiente virtual
 sudo chown -R $(whoami):$(whoami) ~/spark-project/spark-env
 sudo chown -R $USER:$USER /home/papaismurf/spark-project/spark-env/lib/python3.10/site-packages
@@ -172,10 +180,9 @@ Depois, recarregue as configurações:
 source ~/.bashrc
 
 pip install --upgrade pip setuptools wheel
-pip install pyspark
 pip install pyspark jupyterlab poetry
 
-c) Verificar se as instalações foram bem-sucedidas
+c) Verificar se as instalações foram bem-sucedidas(Ative o ambiente virtual antes)
 
 Para testar se o PySpark está funcionando:
 python3 -c "import pyspark; print(pyspark.__version__)"
@@ -218,7 +225,7 @@ Pode ser mais simples para quem quer apenas rodar scripts localmente sem se preo
 Desvantagens:
 Pode causar conflitos de versão com outras bibliotecas instaladas no sistema.
 Se precisar de versões diferentes do PySpark para diferentes projetos, pode ser um problema.
-Atualizações do sistema podem afetar a instalação global do PySpark, quebrando projetos existentes.
+As atualizações do sistema podem afetar a instalação global do PySpark, quebrando projetos existentes.
 
 Conclusão
 Se você pretende trabalhar com múltiplos projetos e quer evitar conflitos entre bibliotecas, o ambiente virtual é a melhor escolha.
@@ -363,17 +370,13 @@ Agora, sempre que quiser usar o Homebrew, faça login com o usuário common_user
 su - common_user
 Se precisar de permissões administrativas para instalar algo, basta usar sudo.
 
-
-
-
-
-Testes com um arquivo de 100MB antes de aplicar à base completa.
-Tem um IDE para desenvolvimento igual ao VSCode na verdade ele importa todas as configurações do vscode, a diferença é que ele é 
+https://www.cursor.com/
+Tem um IDE para desenvolvimento igual ao VSCode, na verdade ele importa todas as configurações do vscode, a diferença é que ele é 
 totalmente com IA, mesmo assim algumas vezes ele acaba atrapalhando. Uma coisa boa é que se ele identificar que falta algum pacote a 
-ser instalado no seu código, ele mesmo inicia o comando no terminal para a instalação dos pacotes que faltam, e também no console do 
-terminal quando aparece um erro você consegue enviar pra ele analisar na hora e ai ele já edita os arquivos que estão gerando erro 
-salva e ai você pode testar antes de aceitar as modificações que ele faz
-É legal pra criar funções básicas, fiz um teste ontem pedi pra ele criar um sisteminha e ele criou todos os arquivos e instalou 
-todas as dependências sozinhos. só não funcionou kkk precisou de ajustes
+ser instalado no seu código, ele mesmo inicia o comando no terminal para fazer a instalação dos pacotes que faltam. Também no 
+console do terminal quando aparece algum erro você consegue enviar para ele analisar na hora que ele já edita os arquivos que estão 
+gerando erro, salva e você pode testar antes de aceitar as modificações que ele fez.
+É legal para criar funções básicas, fiz um teste ontem e pedi para ele criar um sisteminha, e ele criou todos os arquivos e instalou 
+todas as dependências sozinhos. só não funcionou, precisou de ajustes.
 
 
