@@ -7,11 +7,11 @@ Como teste vamos usar um arquivo pequeno.
 Algumas informações relevantes:
 
 a)Apache spark 
-b)O conceito é na verdade o processamento de dados do banco de bases .parquet  
+b)Conceito: Processamento de dados de bases .parquet  
 c)É compatível com python 
 d)Temos uma base com 1.3 TB para subir para o servidor, está comprimido por .snappy e são arquivos .parquet. Então ao invés de  
 atualizar nossa base no mongodb, vamos usar os próprios arquivos .parquet como base de dados gerenciando com o apache spark 
-e)Ele aceita tanto python como também aceita SQL pra gerar as consultas
+e)Ele aceita tanto python como também SQL pra gerar as consultas
 
 Vamos estruturar isso da seguinte forma:
 1)Configuração do Apache Spark no ambiente.
